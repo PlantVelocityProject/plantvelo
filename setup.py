@@ -2,9 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="plantvelo",
-    version="0.1.0",
-    description="Plant-specific RNA velocity with intron-retention aware three-state kinetic model",
+    version="0.3.0",
+    description="Plant RNA velocity counting with high-confidence IR priors",
     packages=find_packages(),
+    package_data={"data": ["*.tsv"]},
     python_requires=">=3.7",
     install_requires=[
         "velocyto>=0.17",

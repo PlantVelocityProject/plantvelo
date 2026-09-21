@@ -1,202 +1,182 @@
 # PlantVelo
 
-**PlantVelo** is a plant-specific RNA velocity analysis toolkit built on top of [velocyto.py](https://github.com/velocyto-team/velocyto.py). It extends the standard two-state splicing model (unspliced → spliced) with an explicit **intron retention (IR)** state, enabling a three-state kinetic framework tailored to the biology of plant cells.
+**Plant RNA velocity counting with high-confidence intron-retention priors**
 
-<p align="center">
-  <img src="www/logic.png" alt="PlantVelo IR logic" width="500">
-</p>
+> Version 0.3.0 | Python >= 3.7 | BSD License
 
-## Background
-
-### Why a plant-specific tool?
-
-Standard RNA velocity methods model RNA dynamics as a two-state process:
-
-```
-Unspliced (U)  →  Spliced (S)
-```
-
-This model was designed primarily for animal cells. Plant cells, however, exhibit substantially higher rates of **intron retention (IR)** — estimated at 60% of transcripts under normal conditions. In plants, IR is not simply a splicing failure; it is an active regulatory mechanism that:
-
-- Produces stable, cytoplasmic IR transcripts
-- Is reversible: retained introns can be spliced post-transcriptionally
-
-Lumping IR reads together with nascent pre-mRNA reads into a single "unspliced" category obscures this biology and leads to systematic misestimation of RNA velocity in plant data.
-
-### The three-state model
-
-PlantVelo separates the intron-only read population into a dedicated layer:
-
-```
-Unspliced (U)  →  Intron-Retained (IR)  →  Spliced (S)
-```
-
-| State | Biological meaning | Read signature |
-|---|---|---|
-| **Unspliced (U)** | Nascent pre-mRNA, actively being transcribed | Reads spanning exon–intron boundary |
-| **Intron-Retained (IR)** | Stable IR isoform, intron fully retained | Reads lying entirely within intron, ≥ `ir_flanking` bp from each edge |
-| **Spliced (S)** | Mature mRNA, intron removed | Reads mapping only to exon features |
-
-This distinction allows downstream kinetic modelling to estimate separate rate constants for the U→IR and IR→S transitions, providing a more accurate description of gene expression dynamics in plant single-cell data.
+PlantVelo is a Python command-line tool for generating RNA velocity count
+matrices from single-cell RNA-seq BAM files. It extends
+[velocyto.py](https://github.com/velocyto-team/velocyto.py) with an optional
+high-confidence intron-retention (IR) state for plant transcriptomes.
 
 ---
 
-## Features
+## Overview
 
-- **Drop-in replacement for `velocyto run`** — same BAM/GTF inputs, same loom output format, fully backward-compatible
-- **New `intron_retained` loom layer** — output loom files contain four layers (`spliced`, `unspliced`, `ambiguous`, `intron_retained`)
-- **`--ir-flanking` parameter** — tunable boundary buffer (bp) to guard against mis-mapping at intron edges
-- **Two plant-aware logic classes**:
-  - `PlantPermissive10X` — counts both validated and non-validated intron-only reads as IR
-  - `PlantValidated10X` — counts only validated intron-only reads as IR (more conservative)
-- **Full compatibility with standard velocyto logics** — `Permissive10X`, `ValidatedIntrons10X`, available via `--logic`
+PlantVelo supports two counting modes:
 
----
+- **Prior-aware**: produces spliced (S), unspliced (U), retained (R), and
+  ambiguous (A) layers using a high-confidence IR prior.
+- **Velocyto baseline**: produces the original velocyto Default spliced,
+  unspliced, and ambiguous layers for comparison.
+
+Counts are written as Loom 3.0 files for downstream analysis with
+[PlantVelocity](https://github.com/plantvelocity/PlantVelocity) or other
+RNA velocity workflows.
+
+## Key Features
+
+- High-confidence IR-aware molecule classification
+- UMI-aware counting from BAM and GTF files
+- Standard velocyto counting mode for benchmarking
+- QC reports for prior matching and molecule classification
+- Strict merging of compatible PlantVelo loom files
 
 ## Installation
 
+Create a conda environment and install velocyto first:
+
 ```bash
-conda create -n plantvelo
+conda create -n plantvelo python=3.10
 conda activate plantvelo
-conda install bioconda::velocyto.py
-pip install git+https://github.com/Jdlutt/plantvelo.git
+conda install -c bioconda velocyto.py
+pip install git+https://github.com/PlantVelocityProject/plantvelo.git
 ```
 
-### Verify installation
+Verify the installation:
 
 ```bash
 plantvelo --version
-plantvelo run --help
 ```
 
----
+PlantVelo requires `loompy >= 3.0` to create and merge Loom 3.0 files.
+
+## IR Prior
+
+Prior-aware mode (the default) requires exactly one of `--species` or
+`--ir-prior`. These options are mutually exclusive and are both prohibited
+with `--ir-mode off`.
+
+### Built-in priors
+
+Built-in priors are installed with the package and are available offline:
+
+| Code | Species |
+|---|---|
+| `ath` | Arabidopsis thaliana |
+| `osa` | Oryza sativa (rice) |
+| `sly` | Solanum lycopersicum (tomato) |
+| `zma` | Zea mays (maize) |
+| `gmx` | Glycine max (soybean) |
+
+Packaged `data/<species>.tsv` files use a five-column format:
+`gene_id`, `chromosome`, `start`, `end`, and `strand`.
+All records are treated as high-confidence IR. Available species are
+discovered from the TSV filenames.
+
+### Custom priors
+
+The `--ir-prior` option remains supported and is not deprecated.
+Custom files use a six-column format and may be CSV or TSV, optionally
+gzip-compressed (`.csv`, `.tsv`, `.csv.gz`, or `.tsv.gz`):
+
+```text
+gene_id
+chromosome
+start
+end
+strand
+IR_class
+```
+
+For custom priors, only rows with `IR_class == "high_confidence_IR"` are used. Coordinates must
+be 1-based closed intervals for both built-in and custom priors and must match the GTF gene IDs, chromosome names,
+coordinates, and strands.
 
 ## Usage
 
-### Basic usage (10x Genomics data)
+### Built-in prior (rice)
 
 ```bash
 plantvelo run \
-    -b filtered_feature_bc_matrix/barcodes.tsv \
-    -o plantvelo_output \
-    -m /path/to/repeat_mask.gtf \
-    --logic PlantPermissive10X \
-    --ir-flanking 5 \
-    --sample-name samples \
-    /path/to/possorted_genome_bam.bam \
-    /path/to/genome_annotation.gtf
+    --ir-mode prior-aware \
+    --species osa \
+    --bcfile filtered_feature_bc_matrix/barcodes.tsv.gz \
+    --outputfolder plantvelo_output \
+    --sample-name sample01 \
+    --mask repeat_masker.gtf \
+    sample.bam annotation.gtf
 ```
 
-This produces `plantvelo_output/<sample>.loom` with four layers:
+### Custom prior
 
-| Layer | Content |
-|-------|---------|
-| `spliced` | Reads mapping only to exon features |
-| `unspliced` | Reads spanning an exon–intron boundary (nascent pre-mRNA) |
-| `ambiguous` | Reads compatible with both spliced and unspliced models |
-| `intron_retained` | Reads lying fully within an intron (IR isoform) |
-
----
-
-## Parameters
-
-### `plantvelo run`
-
-| Option | Short | Default | Description |
-|--------|-------|---------|-------------|
-| `BAMFILE` | — | required | Position-sorted BAM file(s) |
-| `GTFFILE` | — | required | Genome annotation GTF |
-| `--bcfile` | `-b` | None | Valid cell barcodes file (e.g. `barcodes.tsv` from Cell Ranger). If omitted, all barcodes in the BAM are used. |
-| `--outputfolder` | `-o` | `./plantvelo/` | Output directory (created if absent) |
-| `--sample-name` | — | None | Sample name used for output filename and cell barcode |
-| `--mask` | `-m` | None | Repeat masking GTF (strongly recommended) |
-| `--logic` | `-l` | `PlantPermissive10X` | Read classification logic class |
-| `--ir-flanking` | — | `5` | Minimum bp from intron edge required to classify a read as IR |
-| `--dtype` | `-t` | `uint32` | Numeric dtype for loom layers. Use `uint32` if >6000 UMIs/gene/cell are expected. |
-| `--samtools-threads` | `-@` | `16` | Threads for samtools sort |
-| `--samtools-memory` | — | `2048` | MB per thread for samtools sort |
-| `--without-umi` | `-U` | off | Count reads instead of UMI-collapsed molecules |
-| `--multimap` | `-M` | off | Include non-uniquely mapped reads (not recommended) |
-| `--verbose` | `-v` | 1 | Verbosity: `-v` warnings, `-vv` info, `-vvv` debug |
-
-### Available logic classes
-
-| Logic | IR layer | Non-validated introns |
-|-------|----------|-----------------------|
-| `PlantPermissive10X` | ✅ | Counted as IR |
-| `PlantValidated10X` | ✅ strict | Discarded |
-
-### `--ir-flanking` guidance
-
-| Value | Recommended when |
-|-------|-----------------|
-| `5` | Default; standard 10x short reads (≥75 bp) |
-| `10` | Read length < 75 bp, or alignment quality is uncertain |
-| `20` | Long-read data |
-| `0` | Maximum permissiveness; expect higher noise |
-
----
-
-## Output format
-
-The output is a standard [loom file](http://loompy.org/) readable by velocyto, scVelo, and other RNA velocity tools.
----
-
-## How intron retention is detected
-
-```
-BAM reads
-    │
-    ▼
-CIGAR parsing                    counter.py (velocyto)
-    │  segments + ref_skipped flag
-    ▼
-Feature matching                 indexes.py (velocyto)
-    │  each segment → exon / intron features
-    ▼
-PlantPermissive10X.count()       logic.py (plantvelo)
-    │
-    ├─ Only exon-compatible models
-    │       └─► spliced
-    │
-    ├─ All models span exon–intron boundary
-    │       └─► unspliced  (nascent pre-mRNA)
-    │
-    ├─ Only intron models
-    │   ├─ all segments ≥ ir_flanking from intron edges
-    │   │       └─► intron_retained  ◄── NEW
-    │   └─ any segment close to edge (possible mis-map)
-    │           └─► unspliced
-    │
-    └─ Ambiguous / multi-gene
-            └─► ambiguous / discarded
+```bash
+plantvelo run \
+    --ir-prior intron_prior.tsv \
+    --bcfile filtered_feature_bc_matrix/barcodes.tsv.gz \
+    --outputfolder plantvelo_output \
+    --sample-name sample01 \
+    sample.bam annotation.gtf
 ```
 
----
+### Velocyto baseline
 
-## Project structure
-
-```
-plantvelo/
-├── setup.py
-├── README.md
-└── plantvelo/
-    ├── __init__.py
-    ├── _version.py
-    ├── logic.py              # PlantPermissive10X, PlantValidated10X
-    └── commands/
-        ├── __init__.py
-        ├── plantvelo.py      # CLI entry point
-        ├── run.py            # plantvelo run command
-        └── _run.py           # pipeline core function
+```bash
+plantvelo run \
+    --ir-mode off \
+    --bcfile filtered_feature_bc_matrix/barcodes.tsv.gz \
+    --outputfolder velocyto_baseline \
+    --sample-name sample01 \
+    --mask repeats.gtf \
+    sample.bam annotation.gtf
 ```
 
----
+The repeat mask (`--mask`) is optional. Use `plantvelo run --help` to view all available counting options.
+
+## Merge Loom Files
+
+Merge two or more PlantVelo loom files with the same classification schema:
+
+```bash
+plantvelo merge \
+    --output combined.plantvelo.loom \
+    sample1.loom sample2.loom sample3.loom
+```
+
+Use `--force` to replace an existing output after validation. Prior-aware and
+velocyto baseline loom files cannot be mixed in one merge.
+Inputs must also have compatible GTF/prior hashes, counting metadata, genes,
+and attributes. Use a distinct `--sample-name` for each sample to keep
+cell IDs globally unique. QC TSV files are not merged.
+
+## Output
+
+Prior-aware mode produces:
+
+```text
+<output>/<sample>.loom
+<output>/<sample>.ir_prior_qc.tsv
+<output>/<sample>.ir_prior_unmatched.tsv
+<output>/<sample>.classification_qc.tsv
+```
+
+The loom file contains `spliced`, `unspliced`, `retained`, and `ambiguous`
+layers. Velocyto baseline mode produces only `<output>/<sample>.loom`, with
+`spliced`, `unspliced`, and `ambiguous` layers.
 
 ## Citation
-PlantVelo builds on:
 
-> La Manno G, Soldatov R, Zeisel A, et al. RNA velocity of single cells[J]. Nature, 2018, 560(7719): 494-498.
+PlantVelo builds on velocyto:
 
----
+> La Manno G, Soldatov R, Zeisel A, et al. RNA velocity of single cells.
+> Nature. 2018;560:494-498.
 
+If you use PlantVelo with PlantVelocity, please also cite the corresponding
+PlantVelocity publication when available.
+
+## Contributing / Issues
+
+- **Bug reports and feature requests:**
+  [PlantVelo issues](https://github.com/PlantVelocityProject/plantvelo/issues)
+- **Contact:** [jdluttzxr@stu.xmu.edu.cn](mailto:jdluttzxr@stu.xmu.edu.cn)
+- **Pull requests:** Contributions are welcome.
