@@ -116,6 +116,7 @@ plantvelo run \
     --bcfile filtered_feature_bc_matrix/barcodes.tsv.gz \
     --outputfolder plantvelo_output \
     --sample-name sample01 \
+    --mask repeat_masker.gtf \
     sample.bam annotation.gtf
 ```
 
@@ -127,7 +128,7 @@ plantvelo run \
     --bcfile filtered_feature_bc_matrix/barcodes.tsv.gz \
     --outputfolder velocyto_baseline \
     --sample-name sample01 \
-    --mask repeats.gtf \
+    --mask repeat_masker.gtf \
     sample.bam annotation.gtf
 ```
 
@@ -164,6 +165,13 @@ The loom file contains `spliced`, `unspliced`, `retained`, and `ambiguous`
 layers. Velocyto baseline mode produces only `<output>/<sample>.loom`, with
 `spliced`, `unspliced`, and `ambiguous` layers.
 
+## Support
+
+For bug reports and feature requests, please open an issue on
+[PlantVelo issues](https://github.com/PlantVelocityProject/plantvelo/issues). 
+For other enquiries, contact [jdluttzxr@stu.xmu.edu.cn](mailto:jdluttzxr@stu.xmu.edu.cn). 
+Contributions through pull requests are welcome.
+
 ## Citation
 
 PlantVelo builds on velocyto:
@@ -173,10 +181,3 @@ PlantVelo builds on velocyto:
 
 If you use PlantVelo with PlantVelocity, please also cite the corresponding
 PlantVelocity publication when available.
-
-## Contributing / Issues
-
-- **Bug reports and feature requests:**
-  [PlantVelo issues](https://github.com/PlantVelocityProject/plantvelo/issues)
-- **Contact:** [jdluttzxr@stu.xmu.edu.cn](mailto:jdluttzxr@stu.xmu.edu.cn)
-- **Pull requests:** Contributions are welcome.
