@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "species": {
+    "ath": {
+      "annotation_id": "Araport11",
+      "reference_id": "TAIR10",
+      "reference_sha256": {
+        "annotation": "addb33b3e1b792af04026d8822215eebc59359b50d2514d4b1f66e9e5e3f7464",
+        "genome": "ae760f0b62995aa434e8b3b8f3d4b44317b6f41320d6558c36bbeeb47bbdfdeb"
+      },
+      "release_id": "g000001-6e1bbf52d2",
+      "rows": 2256,
+      "sha256": "72d5dab4a890ace5910c8736bfe15ffc985fac548a9f38bfa849d3f30ce1277c"
+    },
+    "gmx": {
+      "annotation_id": "Wm82.a2.v1",
+      "reference_id": "Glycine_max_v2.1",
+      "reference_sha256": {
+        "annotation": "b6a726eaed0d41f09a3f1c250a0c3c5c4b2ce86b900e398934f4bbe08213c659",
+        "genome": "54e6d38b7c435a5d6f60916dd8acfa7cb29137ab78e2c86b05a37cf8550502ee"
+      },
+      "release_id": "g000001-c4b8d4a7c2",
+      "rows": 2097,
+      "sha256": "130e2ae62703ea4070729560ba808e38b5a8cf6912200f42fb1768d0e1187fb9"
+    },
+    "osa": {
+      "annotation_id": "RAP-DB",
+      "reference_id": "IRGSP-1.0",
+      "reference_sha256": {
+        "annotation": "85ea94b690131229111226bf3ba6e3615d53d81d918151afd89d70a6dda1b4d0",
+        "genome": "b3beff484bd4336bfde54b4f9fbd999d17f93827edfa8f7dd2db74d7a0da3290"
+      },
+      "release_id": "g000001-8b70f03773",
+      "rows": 1470,
+      "sha256": "d6ed1c857f3a6df7a340c74830d36099ba5abb3445ec4ec3aefb059c48114d7f"
+    },
+    "sly": {
+      "annotation_id": "ITAG4.0",
+      "reference_id": "SL4.0",
+      "reference_sha256": {
+        "annotation": "8710785eff4c5ec059fb88163515404e0abce01de1bff6aa245b7363d9cea0a9",
+        "genome": "7ae2eeae52b55e4740998274d5afbcd64ae52d38e2a17dfe73f16b61a39d3874"
+      },
+      "release_id": "g000001-af698fe9e0",
+      "rows": 1330,
+      "sha256": "6f84f77735f2a192fff55209a4adb8bb716351791f5c378528786cb0532b77dc"
+    },
+    "zma": {
+      "annotation_id": "Zm00001eb.1",
+      "reference_id": "Zm-B73-REFERENCE-NAM-5.0",
+      "reference_sha256": {
+        "annotation": "a7376eada3366287e1a7018eee2193ff2eb3a8250b366a5c98bd4fd873852c28",
+        "genome": "dfa228c1fa3c9731cfb3e0f41bd63c4e6316318a884db881e3fd610b27f39d77"
+      },
+      "release_id": "g000001-2bd5d2ad74",
+      "rows": 1782,
+      "sha256": "b4c242924f36e872e8984565f155fc3a4078a9e4b7ead5897b089ad50e2e71d1"
+    }
+  }
+}

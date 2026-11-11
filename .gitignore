@@ -1,0 +1,11 @@
+# Local tests, documentation, and distribution artifacts
+/tests/
+/docs/
+/dist/
+
+# Python build and cache files
+/build/
+*.egg-info/
+__pycache__/
+*.py[cod]
+.pytest_cache/
