@@ -21,8 +21,8 @@ to produce Loom 3.0 count matrices.
 ```bash
 conda create -n plantvelo python=3.10
 conda activate plantvelo
-conda install -c conda-forge -c bioconda velocyto.py
-pip install git+https://github.com/PlantVelocityProject/plantvelo.git
+conda install bioconda::velocyto.py
+python -m pip install git+https://github.com/PlantVelocityProject/plantvelo.git
 plantvelo --version
 ```
 
