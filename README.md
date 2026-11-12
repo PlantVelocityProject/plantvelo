@@ -64,6 +64,15 @@ Baseline mode does not accept prior options (`--species`, `--ir-prior`, or
 
 ## IR Priors
 
+[PlantIRPrior](https://plantvelocityproject.github.io/PlantIRprior/)
+provides species-specific, high-confidence IR priors derived from long-read
+transcriptomic evidence. Visit the website to browse IR events, inspect
+source samples and reference versions, and download versioned priors.
+
+To use a downloaded prior, select the **PlantVelo prior** TSV matching your
+species, reference genome assembly and annotation, then supply it with
+`--ir-prior path/to/high_confidence_IR.tsv`.
+
 ### Built-in priors
 
 These priors are included for offline use:
